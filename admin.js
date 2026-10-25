@@ -53,6 +53,24 @@ function detail(r){
  const fields=[['Nomor registrasi',r.registration_number],['Nama',r.full_name],['Tanggal lahir',r.date_of_birth],['Jenis kelamin',r.gender],['Agama',r.religion],['Telepon',r.phone],['WhatsApp',r.whatsapp],['Email',r.email],['Alamat',r.address],['Kelurahan',r.village],['Kecamatan',r.district],['Kota',r.city],['Provinsi',r.province],['Ahli waris',r.next_of_kin_name],['Telepon ahli waris',r.next_of_kin_phone],['Alamat ahli waris',r.next_of_kin_address],['Riwayat penyakit dahulu',(r.past_conditions||[]).join(', ')],['Penyakit saat ini',(r.current_conditions||[]).join(', ')],['Persetujuan keluarga',r.family_approval],['Sumber informasi',r.information_source],['Persetujuan privasi',r.privacy_consent_at?'Tercatat':'Belum tercatat'],['Status',labels[r.status]||r.status]];
  const container=$('detailContent');container.replaceChildren();
  for(const [label,value] of fields){const div=document.createElement('div'),small=document.createElement('small'),span=document.createElement('span');small.textContent=label;span.textContent=value||'—';div.append(small,span);container.append(div)}
+ const ktpSection=document.createElement('section');
+ ktpSection.className='ktp-section';
+ const ktpTitle=document.createElement('h3');ktpTitle.textContent='Dokumen KTP (privat)';ktpSection.append(ktpTitle);
+ const ktpStatus=document.createElement('p');ktpStatus.textContent='Memeriksa dokumen…';ktpSection.append(ktpStatus);container.append(ktpSection);
+ db.from('donor_ktp_documents').select('object_path').eq('registration_id',r.id).maybeSingle().then(({data,error})=>{
+  if(!$('detail').open)return;
+  if(error){ktpStatus.textContent='Fitur dokumen belum siap. Periksa migrasi SQL Tahap 7.';return}
+  if(!data){ktpStatus.textContent='Belum ada KTP untuk registrasi ini.';return}
+  ktpStatus.textContent='Dokumen tersedia di penyimpanan privat.';
+  const button=document.createElement('button');button.type='button';button.className='outline';button.textContent='Lihat KTP (60 detik)';
+  button.addEventListener('click',async()=>{
+   button.disabled=true;
+   const {data:link,error:linkError}=await db.storage.from('bankmata-ktp').createSignedUrl(data.object_path,60);
+   button.disabled=false;
+   if(linkError||!link?.signedUrl){ktpStatus.textContent='Dokumen tidak dapat dibuka. Periksa izin petugas.';return}
+   const a=document.createElement('a');a.href=link.signedUrl;a.target='_blank';a.rel='noopener noreferrer';a.click();
+  });ktpSection.append(button);
+ });
  const section=document.createElement('section');
  const heading=document.createElement('h3');heading.textContent='Tindak lanjut petugas';section.append(heading);
  const choices={submitted:['under_review'],under_review:['education_pending'],education_pending:['ready_to_print'],ready_to_print:['completed'],completed:[],cancelled:[]};
