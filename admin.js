@@ -130,4 +130,16 @@ function setView(key){
 document.querySelectorAll('.nav-link').forEach(btn=>btn.addEventListener('click',()=>setView(btn.dataset.view)));
 $('menuToggle').addEventListener('click',()=>{const open=$('sidebar').classList.toggle('open');$('menuToggle').setAttribute('aria-expanded',String(open))});
 setView('overview');
+// Refresh the staff dashboard when returning from the registration site.
+// No polling or exposure of donor information to unauthenticated visitors.
+let lastRefresh=0;
+async function refreshOnReturn(){
+ if(!state.staff||document.hidden||$('detail').open)return;
+ const now=Date.now();
+ if(now-lastRefresh<10000)return;
+ lastRefresh=now;
+ await load();
+}
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)void refreshOnReturn()});
+window.addEventListener('focus',()=>{void refreshOnReturn()});
 verify();
