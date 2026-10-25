@@ -4,7 +4,7 @@ const $=id=>document.getElementById(id);
 const db=createClient(cfg.url,cfg.publishableKey,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false}});
 const state={page:0,size:20,records:[],count:0,staff:false};
 const labels={submitted:'Baru',under_review:'Ditinjau',education_pending:'Menunggu edukasi',ready_to_print:'Siap dicetak',completed:'Selesai',cancelled:'Dibatalkan'};
-function show(auth){$('dashboard').hidden=!auth;$('account').hidden=!auth}
+function show(auth){$('dashboard').hidden=!auth;$('account').hidden=!auth;$('sidebar').hidden=!auth}
 function msg(id,value){$(id).textContent=value}
 async function verify(){
  const {data:{user},error}=await db.auth.getUser();
@@ -89,4 +89,25 @@ $('search').addEventListener('input',render);
 $('status').addEventListener('change',()=>{state.page=0;load()});
 $('previous').addEventListener('click',()=>{if(state.page>0){state.page--;load()}});
 $('following').addEventListener('click',()=>{if((state.page+1)*state.size<state.count){state.page++;load()}});
+const views={
+ overview:{eyebrow:'PUSAT OPERASIONAL',title:'Dashboard Bank Mata',subtitle:'Ringkasan pendaftaran dan tindak lanjut calon donor.',metrics:true,records:true,recordsTitle:'Registrasi Terbaru'},
+ donors:{eyebrow:'DATA DONOR',title:'Data Calon Donor',subtitle:'Telusuri dan periksa registrasi calon donor yang masuk.',metrics:false,records:true,recordsTitle:'Daftar Calon Donor'},
+ verification:{eyebrow:'ALUR VERIFIKASI',title:'Verifikasi & Edukasi',subtitle:'Tinjau registrasi dan proses edukasi melalui detail calon donor.',metrics:false,records:true,recordsTitle:'Antrian Registrasi'},
+ documents:{eyebrow:'DOKUMEN',title:'Formulir & Cetak PDF',subtitle:'Persiapan dokumen resmi Bank Mata RSCM.',info:'Pencetakan dokumen resmi belum tersedia.',detail:'Pengisian formulir dan PDF sesuai dokumen resmi akan dikembangkan setelah format disetujui.'},
+ history:{eyebrow:'AUDIT',title:'Riwayat Aktivitas',subtitle:'Riwayat perubahan status dapat dilihat melalui detail setiap registrasi.',info:'Riwayat aktivitas terpusat belum tersedia.',detail:'Untuk saat ini, buka detail calon donor dan lihat bagian Riwayat Aktivitas.'},
+ staff:{eyebrow:'AKSES INTERNAL',title:'Manajemen Petugas',subtitle:'Pengelolaan akses hanya untuk administrator berwenang.',info:'Manajemen akun petugas belum tersedia.',detail:'Akun dan peran petugas tetap dikelola melalui Supabase oleh administrator.'},
+ settings:{eyebrow:'SISTEM',title:'Pengaturan',subtitle:'Konfigurasi internal dan kebijakan operasional.',info:'Pengaturan mandiri belum tersedia.',detail:'Pengaturan keamanan dan koneksi tetap dilakukan melalui lingkungan deployment serta Supabase.'}
+};
+function setView(key){
+ const view=views[key]||views.overview;
+ $('viewEyebrow').textContent=view.eyebrow;$('viewTitle').textContent=view.title;$('viewSubtitle').textContent=view.subtitle;
+ $('metricsPanel').hidden=!view.metrics;$('recordsPanel').hidden=!view.records;$('infoPanel').hidden=!view.info;
+ if(view.records)$('recordsTitle').textContent=view.recordsTitle;
+ if(view.info){$('infoTitle').textContent=view.info;$('infoText').textContent=view.detail;}
+ document.querySelectorAll('.nav-link').forEach(btn=>{const active=btn.dataset.view===key;btn.classList.toggle('active',active);if(active)btn.setAttribute('aria-current','page');else btn.removeAttribute('aria-current')});
+ $('sidebar').classList.remove('open');$('menuToggle').setAttribute('aria-expanded','false');
+}
+document.querySelectorAll('.nav-link').forEach(btn=>btn.addEventListener('click',()=>setView(btn.dataset.view)));
+$('menuToggle').addEventListener('click',()=>{const open=$('sidebar').classList.toggle('open');$('menuToggle').setAttribute('aria-expanded',String(open))});
+setView('overview');
 verify();
