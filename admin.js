@@ -64,11 +64,13 @@ function detail(r){
   ktpStatus.textContent='Dokumen tersedia di penyimpanan privat.';
   const button=document.createElement('button');button.type='button';button.className='outline';button.textContent='Lihat KTP (60 detik)';
   button.addEventListener('click',async()=>{
+   const tab=window.open('about:blank','_blank');
+   if(tab)tab.opener=null;
    button.disabled=true;
    const {data:link,error:linkError}=await db.storage.from('bankmata-ktp').createSignedUrl(data.object_path,60);
    button.disabled=false;
-   if(linkError||!link?.signedUrl){ktpStatus.textContent='Dokumen tidak dapat dibuka. Periksa izin petugas.';return}
-   const a=document.createElement('a');a.href=link.signedUrl;a.target='_blank';a.rel='noopener noreferrer';a.click();
+   if(linkError||!link?.signedUrl){if(tab)tab.close();ktpStatus.textContent='Dokumen tidak dapat dibuka. Periksa izin petugas.';return}
+   if(tab){tab.location.replace(link.signedUrl)}else{ktpStatus.textContent='Browser memblokir tab baru. Izinkan pop-up untuk membuka dokumen.'}
   });ktpSection.append(button);
  });
  const section=document.createElement('section');
